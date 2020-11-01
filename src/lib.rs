@@ -4,7 +4,6 @@
 
 use std::env;
 
-use dotenv::dotenv;
 use oauth::{Builder, Credentials};
 use reqwest::blocking::Client;
 use rocket::http::RawStr;
@@ -190,8 +189,5 @@ fn exchange_request_for_access(
 
 /// Builds the web server routing and returns it ready to be launched.
 pub fn build_rocket() -> rocket::Rocket {
-    pretty_env_logger::init();
-    dotenv().unwrap();
-
     rocket::ignite().mount("/", routes![index, authorised])
 }
