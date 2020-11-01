@@ -1357,6 +1357,7 @@ dependencies = [
  "reqwest",
  "rocket",
  "rocket_contrib",
+ "url 2.1.1",
 ]
 
 [[package]]

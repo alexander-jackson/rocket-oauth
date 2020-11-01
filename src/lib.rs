@@ -2,12 +2,14 @@
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 
+use std::collections::HashMap;
 use std::env;
 
 use oauth::{Builder, Credentials};
 use reqwest::blocking::Client;
 use rocket::http::RawStr;
 use rocket::response::Redirect;
+use url::form_urlencoded;
 
 #[macro_use]
 extern crate rocket;
@@ -31,39 +33,6 @@ const REQUEST_TOKEN_URL: &str = "https://websignon.warwick.ac.uk/oauth/requestTo
 const AUTHORISE_TOKEN_URL: &str = "https://websignon.warwick.ac.uk/oauth/authorise";
 const ACCESS_TOKEN_URL: &str = "https://websignon.warwick.ac.uk/oauth/accessToken";
 
-/// Splits a token of the form `x=y` and returns the `y` portion.
-///
-/// # Examples
-///
-/// ```
-/// # use rocket_oauth::parse_token;
-/// let token = "token=abcde";
-/// let parsed = parse_token(token);
-///
-/// assert_eq!(parsed, "abcde");
-/// ```
-pub fn parse_token(token: &str) -> &str {
-    let index = token.find('=').unwrap();
-    &token.split_at(index).1[1..]
-}
-
-/// Splits tokens of the form `a=b&c=d` and returns the `b` and `d` portions.
-///
-/// # Examples
-///
-/// ```
-/// # use rocket_oauth::parse_tokens;
-/// let stream = "token=abcde&secret=other";
-/// let (token, secret) = parse_tokens(stream);
-///
-/// assert_eq!(token, "abcde");
-/// assert_eq!(secret, "other");
-/// ```
-pub fn parse_tokens(request_token: &str) -> (&str, &str) {
-    let tokens: Vec<&str> = request_token.split('&').collect();
-    (parse_token(tokens[0]), parse_token(tokens[1]))
-}
-
 /// Represents the root of the website. Users are immediately redirected to sign in.
 ///
 /// Gets the `CONSUMER_KEY` and `CONSUMER_SECRET` values from the environment and requests a new
@@ -78,9 +47,11 @@ fn index() -> Redirect {
     let request_token = obtain_request_token(&consumer_key, &consumer_secret);
     log::info!("Request token obtained: {}", request_token);
 
-    let (token, secret) = parse_tokens(&request_token);
+    let query_params: HashMap<_, _> = form_urlencoded::parse(&request_token.as_bytes()).collect();
+    let token = &query_params["oauth_token"];
+    let secret = &query_params["oauth_token_secret"];
 
-    std::fs::write("secret.txt", secret).unwrap();
+    std::fs::write("secret.txt", &**secret).unwrap();
 
     let url = format!(
         "{}?oauth_token={}&oauth_callback={}",
