@@ -20,11 +20,6 @@ struct Request {
     expiry: &'static str,
 }
 
-#[derive(oauth::Request)]
-struct Access<'a> {
-    oauth_token: &'a str,
-}
-
 const SCOPE: &str = "urn:websignon.warwick.ac.uk:sso:service";
 const EXPIRY: &str = "forever";
 const OAUTH_CALLBACK: &str = "http://localhost:8000/authorised";
